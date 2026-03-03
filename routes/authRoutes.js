@@ -69,7 +69,7 @@ router.route("/")
         },
     )
 
-    // GET - /api/auth - GET User info - Private access 
+    // GET: /api/auth - GET User info - Private access 
 
     .get(auth, async (req, res) => {
         const user = await User.findById(req.user.id).select("-password");
