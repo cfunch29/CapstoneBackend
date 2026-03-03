@@ -2,7 +2,9 @@
 import express from "express";
 import dotenv from "dotenv";
 import connectDB from "./db/conn.js"
-import cors from "cors";
+// import cors from "cors";
+import userRoutes from "./routes/userRoutes.js";
+import authRoutes from "./middleware/authMiddleware.js";
 
 // data 
 import { globalErr } from "./middleware/middlewares.js"
@@ -15,11 +17,13 @@ const PORT = process.env.PORT || 3001;
 connectDB();
 
 // middleware
-app.use(cors());
+// app.use(cors());
 app.use(express.json());
 app.use(logReq);
 
 // routes 
+app.use("/api/user", userRoutes);
+app.use("/api/auth", authRoutes);
 
 // global err handling middleware 
 app.use(globalErr);
