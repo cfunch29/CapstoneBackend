@@ -7,6 +7,8 @@
 <!-- ROADMAP -->
 ## Roadmap
 
+** Project Management [Notion](https://www.notion.so/Finance-Tracker-App-MERN-Web-App-313abfec6ae180f3aa4ade4dd935d498?source=copy_link)
+
 - [ ] 
 - [ ] 
 
@@ -15,6 +17,8 @@
 - JavaScript
 - React 
 - Vite 
+- Mongoose 
+- cors 
 
 
 ## Usage

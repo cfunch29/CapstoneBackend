@@ -15,6 +15,8 @@ const PORT = process.env.PORT || 3001;
 connectDB();
 
 // middleware
+app.use(cors());
+app.use(express.json());
 app.use(logReq);
 
 // routes 
