@@ -14,7 +14,7 @@ This server is going to validate users and authorize their data versus what's sa
 ** Project Management [Notion](https://www.notion.so/Finance-Tracker-App-MERN-Web-App-313abfec6ae180f3aa4ade4dd935d498?source=copy_link)
 
 -  user schema - backend auth 
--  user routes: POST ("/api/user")
+-  user routes: POST/GET/PUT/DELETE ("/api/user")()
 -  auth routes: POST/GET/PUT/DELETE ("/api/auth")
 
 
