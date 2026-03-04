@@ -34,34 +34,34 @@ router.route("/")
                 // if no user, res w/ error
                 if (!user)
                     return res.status(400)
-                                .json({ errors: [{ msg: "Invalid Credentials" }] });
+                        .json({ errors: [{ msg: "Invalid Credentials" }] });
 
 
-                    // compare password
-                    const isMatch = await bcrypt.compare(password, user.password);
+                // compare password
+                const isMatch = await bcrypt.compare(password, user.password);
 
-                    // if not a match return w/ error 
-                    if (!isMatch)
-                        return res.status(400)
-                                    .json({ errors: [{ msg: "Invalid Credentials" }] });
+                // if not a match return w/ error 
+                if (!isMatch)
+                    return res.status(400)
+                        .json({ errors: [{ msg: "Invalid Credentials" }] });
 
-                        // Create payload for jwt 
-                        const payload = {
-                            user: {
-                                id: user._id,
-                            },
-                        };
+                // Create payload for jwt 
+                const payload = {
+                    user: {
+                        id: user._id,
+                    },
+                };
 
-                        // sign in and send JWT in res
-                        jwt.sign(
-                            payload,
-                            process.env.jwtSecret,
-                            { expiresIn: "3h" },
-                            (err, token) => {
-                                if (err) throw err;
-                                res.json({ token });
-                            },
-                        );
+                // sign in and send JWT in res
+                jwt.sign(
+                    payload,
+                    process.env.jwtSecret,
+                    { expiresIn: "3h" },
+                    (err, token) => {
+                        if (err) throw err;
+                        res.json({ token });
+                    },
+                );
             } catch (err) {
                 console.error(err.message);
                 res.status(500).json({ errors: [{ msg: err.message }] });
@@ -74,6 +74,65 @@ router.route("/")
     .get(auth, async (req, res) => {
         const user = await User.findById(req.user.id).select("-password");
         res.json(user);
-    });
+    })
 
-    export default router;
+    // PUT: /api/auth - Updated user info - Private access 
+    .put( 
+        auth, [
+            // using .optional() to allow user to choose if they need to update either input
+            check("email", "Please include a valid email").optional().isEmail(),
+            check("password", "Password must be 6 or more characters").optional().isLength({ min: 6 }),
+        ],
+        async (req, res) => {
+            const errors = validationResult(req);
+            if (!errors.isEmpty())
+                return res.status(400).json({ errors: errors.array() });
+
+            const { email, password, name } = req.body;
+
+            try {
+                // Create updated fields obj - dynamically build obj - only updates whats send to the body
+                const updatedFields = {};
+                if (name) updatedFields.name = name;
+                if (email) updatedFields.email = email;
+                if (password) {
+                    // Must hash a new password prior to saving
+                    const salt = await bcrypt.genSalt(10);
+                    updatedFields.password = await bcrypt.hash(password, salt);
+                }
+
+                // Find user by id from JWT and update
+                const user = await User.findByIdAndUpdate(
+                    req.user.id,
+                    { $set: updatedFields },
+                    { new: true } //returns updated instead of old
+                ).select("-password");
+
+                if (!user)
+                    return res.status(400).json({ errors: [{ msg: "User not found!"}] });
+
+                res.json(user);
+        
+            } catch (err) {
+                console.error(err.message);
+                res.status(500).json({ errors: [{ msg: err.message }] });
+            }
+        }
+    )
+
+    // DELETE: /api/auth - Delete user - Private access 
+    .delete(auth, async (req, res) => {
+        try {
+            const user = await User.findByIdAndDelete(req.user.id);
+
+            if (!user)
+                return res.status(404).json({ errors: [{ msg: "User not found!" }] });
+
+            res.json({ msg: "User deleted successfully!" });
+        } catch (err) {
+            console.error(err.message);
+            res.status(500).jsom({ errors: [{ msg: err.message }] });
+        }
+    });
+    
+export default router;
