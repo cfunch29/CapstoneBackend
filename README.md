@@ -15,7 +15,7 @@ This server is going to validate users and authorize their data versus what's sa
 
 -  user schema - backend auth 
 -  user routes: POST ("/api/user")
--  auth routes: POST/GET ("/api/auth")
+-  auth routes: POST/GET/PUT/DELETE ("/api/auth")
 
 
 

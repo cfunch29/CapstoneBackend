@@ -15,78 +15,163 @@ const router = express.Router();
 
 // POST
 router.route("/")
-.post(
-    [
-        // establish validation rules for name, email & password
-        check("name", "Name is required.").not().isEmpty(),
-        check("email", "Please include a valid email").isEmail(),
-        check("password",
-            "Please enter a password with 6 or more characters.",
-        ).isLength({ min: 6 })
-    ],
-    async (req, res) => {
-        // create a variable to hold errors and store in an array from previous "checks"
+    .post(
+        [
+            // establish validation rules for name, email & password
+            check("name", "Name is required.").not().isEmpty(),
+            check("email", "Please include a valid email").isEmail(),
+            check("password",
+                "Please enter a password with 6 or more characters.",
+            ).isLength({ min: 6 })
+        ],
+        async (req, res) => {
+            // create a variable to hold errors and store in an array from previous "checks"
 
-        const errors = validationResult(req);
+            const errors = validationResult(req);
 
-        // if errors array is NOT empty, res w/ error
-        if(!errors.isEmpty())
-            return res.status(400).json({ errors: errors.array() });
+            // if errors array is NOT empty, res w/ error
+            if (!errors.isEmpty())
+                return res.status(400).json({ errors: errors.array() });
 
-        // create array obj to store errors in
-        const { name, email, password } = req.body;
+            // create array obj to store errors in
+            const { name, email, password } = req.body;
 
+            try {
+                // check if user already exists
+                let user = await User.findOne({ email });
+
+                // res w/ error 
+                if (user)
+                    return res.status(400).json({ errors: [{ msg: "User already exists" }] });
+
+                // create new user obj
+                user = new User({
+                    name,
+                    email,
+                    password,
+                });
+
+                // create salt to hash pw. Num represents number of rounds of encryption, typically btw 10-12
+                const salt = await bcrypt.genSalt(10);
+
+                // hash/encrypt our pw
+                user.password = await bcrypt.hash(password, salt);
+
+
+                // save user to DB
+                await user.save();
+
+                // create payload for JWT
+                const payload = {
+                    user: {
+                        id: user._id,
+                        name: user.name, //usually wouldnt include bc bloats token and for security but since we're connecting to FE display its ok here
+                    },
+                };
+
+                //Res w/JWT, bc we are registering and logging in simultaneously
+                jwt.sign(
+                    payload,
+                    process.env.jwtSecret,
+                    { expiresIn: "3h" },
+                    (err, token) => {
+                        if (err) throw err;
+
+                        res.json({ token });
+                    },
+                );
+            } catch (err) {
+                console.error(err.message);
+                res.status(err.status || 500)
+                    .json({ errors: [{ msg: `❌ Error: ${err.message}` }] });
+            }
+        },
+    );
+
+// GET: /api/users - Get all users 
+router.route("/")
+    .get(async (req, res) => {
         try {
-            // check if user already exists
-            let user = await User.findOne({ email });
-
-            // res w/ error 
-            if (user)
-                return res.status(400).json({ errors: [{ msg: "User already exists" }] });
-
-            // create new user obj
-            user = new User({
-                name, 
-                email,
-                password,
-            });
-
-            // create salt to hash pw. Num represents number of rounds of encryption, typically btw 10-12
-            const salt = await bcrypt.genSalt(10);
-            
-            // hash/encrypt our pw
-            user.password = await bcrypt.hash(password, salt);
-
-
-            // save user to DB
-            await user.save();
-
-            // create payload for JWT
-            const payload = {
-                user: {
-                    id: user._id,
-                    name: user.name, //usually wouldnt include bc bloats token and for security but since we're connecting to FE display its ok here
-                },
-            };
-
-            //Res w/JWT, bc we are registering and logging in simultaneously
-            jwt.sign(
-                payload,
-                process.env.jwtSecret,
-                { expiresIn: "3h" },
-                (err, token) => {
-                    if (err) throw err;
-
-                    res.json({ token });
-                },
-            );
+            const users = await User.find().select("-password");
+            res.json(users);
         } catch (err) {
             console.error(err.message);
-            res.status(err.status || 500)
-            .json({ errors: [{ msg: `❌ Error: ${err.message}`}] });
+            res.status(500).json({ errors: [{ msg: `❌ Error: ${err.message}` }] });
         }
-    },
-);
+    });
 
+// GET by ID: /api/users/:id
+router.route("/:id")
+    .get(async (req, res) => {
+        try {
+            const user = await User.findById(req.params.id).select("-password");
+
+            if (!user)
+                return res.status(404).json({ errors: [{ msg: "User not found!" }] });
+
+            res.json(user);
+        } catch (err) {
+            console.error(err.message);
+            res.status(500).json({ errors: [{ msg: `❌ Error: ${err.message}` }] });
+        }
+    })
+
+    // PUT by ID: /api/users/:id
+    .put(
+        [
+            check("name", "Name is required.").not().isEmpty(),
+            check("email", "Please include a valid email").isEmail(),
+            check("password",
+                "Please enter a password with 6 or more characters.",
+            ).isLength({ min: 6 })
+        ],
+        async (req, res) => {
+            const errors = validationResult(req);
+            if (!errors.isEmpty())
+                return res.status(400).json({ errors: errors.array() });
+
+             // create array obj to store errors in
+            const { name, email, password } = req.body;
+
+            try {
+                // update fields obj dynamically 
+                const updatedFields = {};
+                if (name) updatedFields.name = name;
+                if (email) updatedFields.email = email;
+                if (password) {
+                    const salt = await bcrypt.genSalt(10);
+                    updatedFields.password = await bcrypt.hash(password, salt);
+                    }
+
+                    const user = await User.findByIdAndUpdate(
+                        req.params.id,
+                        { $set: updatedFields },
+                        { new: true }
+                    ).select("-password");
+
+                    if (!user)
+                        return res.status(404).json({ errors: [{ msg: "User not found" }] });
+
+                    res.jsong(user);
+            } catch (err) {
+                console.error(err.message);
+                res.status(500).json({ errors: [{ msg: `❌ Error: ${err.message}` }] });
+            }
+        }
+    )
+
+    .delete(async (req, res) => {
+        try {
+            const user = await User.findByIdAndDelete(req.params.id);
+
+            if (!user)
+                return res.status(404).json({ errors: [{ msg: "User not found" }] });
+
+            res.json({ msg: "User deleted successfully!!" });
+        } catch (err) {
+            console.error(err.message);
+            res.status(500).json({ errors: [{ msg: `❌ Error: ${err.message}` }] });
+        }
+    });
 
 export default router;
