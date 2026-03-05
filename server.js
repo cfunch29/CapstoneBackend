@@ -2,7 +2,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import connectDB from "./db/conn.js"
-// import cors from "cors";
+import cors from "cors";
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./middleware/authMiddleware.js";
 
@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3001;
 connectDB();
 
 // middleware
-// app.use(cors());
+app.use(cors());
 app.use(express.json());
 app.use(logReq);
 
