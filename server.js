@@ -5,6 +5,7 @@ import connectDB from "./db/conn.js"
 import cors from "cors";
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./middleware/authMiddleware.js";
+import transactionRoutes from "./routes/transactionRoutes.js";
 
 // data 
 import { globalErr } from "./middleware/middlewares.js"
@@ -24,6 +25,7 @@ app.use(logReq);
 // routes 
 app.use("/api/user", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/transactions", transactionRoutes);
 
 // global err handling middleware 
 app.use(globalErr);
