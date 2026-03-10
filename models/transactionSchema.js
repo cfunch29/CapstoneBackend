@@ -7,7 +7,7 @@ required: true,
 },
  
 amount: {
-type: number,
+type: Number,
 required: true,
 },
 
