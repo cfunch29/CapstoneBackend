@@ -23,7 +23,7 @@ app.use(express.json());
 app.use(logReq);
 
 // routes 
-app.use("/api/user", userRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/transactions", transactionRoutes);
 
