@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import connectDB from "./db/conn.js"
 import cors from "cors";
 import userRoutes from "./routes/userRoutes.js";
-import authRoutes from "./middleware/authMiddleware.js";
+import authRoutes from "./routes/authRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 
 // data 
