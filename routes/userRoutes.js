@@ -86,10 +86,10 @@ router.route("/")
                     .json({ errors: [{ msg: `❌ Error: ${err.message}` }] });
             }
         },
-    );
+    )
 
-// GET: /api/users - Get all users 
-router.route("/")
+    // GET: /api/users - Get all users 
+
     .get(async (req, res) => {
         try {
             const users = await User.find().select("-password");
@@ -120,18 +120,18 @@ router.route("/:id")
     .put(
         auth, //auth protection: auth middleware then async function - protects against users updating others
         [
-            check("name", "Name is required.").not().isEmpty(),
-            check("email", "Please include a valid email").isEmail(),
+            check("name", "Name is required.").optional().not().isEmpty(),
+            check("email", "Please include a valid email").optional().isEmail(),
             check("password",
                 "Please enter a password with 6 or more characters.",
-            ).isLength({ min: 6 })
+            ).optional().isLength({ min: 6 })
         ],
         async (req, res) => {
             const errors = validationResult(req);
             if (!errors.isEmpty())
                 return res.status(400).json({ errors: errors.array() });
 
-             // create array obj to store errors in
+            // create array obj to store errors in
             const { name, email, password } = req.body;
 
             try {
@@ -142,17 +142,19 @@ router.route("/:id")
                 // email uniqueness 
                 if (email) {
                     const existingUser = await User.findOne({ email });
-                    
-                    // make sure existing email doesnt belong to diff user 
-                    
-                    if (existingUser && existingUser._id.toString() !== req.params.id)
-                        return res.status(400).json({ errors: [{ msg: "Email already in use" }] });
-                        updatedFields.email = email;
-                    }
 
-                if (password) {
-                    const salt = await bcrypt.genSalt(10);
-                    updatedFields.password = await bcrypt.hash(password, salt);
+                    // make sure existing email doesnt belong to diff user 
+
+                    if (existingUser && existingUser._id.toString() !== req.params.id) {
+                        return res.status(400).json({ errors: [{ msg: "Email already in use" }] });
+
+                    }
+                    updatedFields.email = email;
+                }
+
+                    if (password) {
+                        const salt = await bcrypt.genSalt(10);
+                        updatedFields.password = await bcrypt.hash(password, salt);
                     }
 
                     const user = await User.findByIdAndUpdate(
@@ -164,27 +166,27 @@ router.route("/:id")
                     if (!user)
                         return res.status(404).json({ errors: [{ msg: "User not found" }] });
 
-                    res.jsong(user);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).json({ errors: [{ msg: `❌ Error: ${err.message}` }] });
+                    res.json(user);
+                } catch (err) {
+                    console.error(err.message);
+                    res.status(500).json({ errors: [{ msg: `❌ Error: ${err.message}` }] });
+                }
             }
-        }
     )
 
     .delete( //auth protection: auth middleware then async function - protects against users deleting others
         auth, async (req, res) => {
-        try {
-            const user = await User.findByIdAndDelete(req.params.id);
+            try {
+                const user = await User.findByIdAndDelete(req.params.id);
 
-            if (!user)
-                return res.status(404).json({ errors: [{ msg: "User not found" }] });
+                if (!user)
+                    return res.status(404).json({ errors: [{ msg: "User not found" }] });
 
-            res.json({ msg: "User deleted successfully!!" });
-        } catch (err) {
-            console.error(err.message);
-            res.status(500).json({ errors: [{ msg: `❌ Error: ${err.message}` }] });
-        }
-    });
+                res.json({ msg: "User deleted successfully!!" });
+            } catch (err) {
+                console.error(err.message);
+                res.status(500).json({ errors: [{ msg: `❌ Error: ${err.message}` }] });
+            }
+        });
 
 export default router;
