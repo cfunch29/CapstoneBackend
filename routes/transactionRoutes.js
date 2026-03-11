@@ -65,7 +65,7 @@ router.route("/:id")
             return res.status(404).json({ errors: [{ msg: "Transaction not found" }] });
 
         // make sure transaction belongs to logged in user
-        if (transaction.user.toString() !== req.user.id)
+        if (transaction.user && transaction.user.toString() !== req.user.id)
             return res.status(401).json({ errors: [{ msg: "Not authorized" }] });
 
         res.json(transaction);
@@ -96,7 +96,7 @@ router.route("/:id")
                 return res.status(404).json({ errors: [{ msg: "Transaction not found" }] });
 
             //make sure transaction belongs to logged in user
-            if (transaction.user.toString() !== req.user.id)
+            if (transaction.user && transaction.user.toString() !== req.user.id)
                 return res.status(401).json({ errors: [{ msg: "Not authorized" }] });
 
             //build updated fields dynamically
@@ -130,7 +130,7 @@ router.route("/:id")
             return res.status(404).json({ errors: [{ msg: "Transaction not found" }] });
 
         //make sure transaction belongs to logged in user 
-        if (transaction.user.toString() !== req.user.id)
+        if (transaction.user && transaction.user.toString() !== req.user.id)
             return res.status(401).json({ errors: [{ msg: "Not authorized" }] });
 
         await Transaction.findByIdAndDelete(req.params.id);
